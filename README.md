@@ -78,7 +78,44 @@ The solver calculates **Manhattan Distance** ($|x_1 - x_2| + |y_1 - y_2|$) to en
 * **Google OR-Tools**: CP-SAT Solver.
 * **Python Dataclasses**: For clean, extensible definitions.
 
-## 📖 How to Contribute
-1.  Add new **Passenger Profiles** in `passengers.py`.
-2.  Map new **Vehicle Layouts** in `layouts.py`.
-3.  Improve the **Grid Visualization** in the terminal.
+## 🚀 How to Use
+
+### 1. Installation
+```bash
+# Clone the repository
+git clone https://github.com/GarlicHorse/IsThisSeatTakenSolver.git
+cd IsThisSeatTakenSolver
+
+# Create and activate virtual environment
+python -m venv .venv
+source .venv/bin/activate  # Windows: .venv\Scripts\activate
+
+# Install dependencies
+pip install -r requirements.txt
+```
+## 🛠️ How to Contribute
+
+This project is built to be modular. To add new game mechanics or characters, follow this **3-step workflow**:
+
+### 1. Update the Dataclasses
+If your new passenger or seat requires a trait that doesn't exist yet, add it to the corresponding dataclass in `src/entities.py`:
+* **Passenger**: Add attributes such as `is_allergic`, `has_dog`, `needs_plug`, etc.
+* **Seat**: Add attributes like `has_table`, `is_broken`, or `is_luxury`.
+
+### 2. Implement the Rules in the Solver
+Once the attribute exists, you must tell the engine how to handle it in `src/core/solver.py`:
+* **For Exclusions (Nuisances):** Update the `_has_nuisance_conflict` method.
+* **For Inclusions (Proximity):** Use the `_enforce_proximity_requirement` method with a custom lambda.
+* **For Seat Requirements:** Use the `_enforce_seat_requirement` method.
+
+
+
+### 3. Create Content & Test
+* **Data:** Add your new passengers to `src/data/passengers.py` or layouts to `src/data/layouts.py`.
+* **Verification:** Create a dedicated test case in `tests/test_logic.py` to ensure the rule is strictly enforced.
+* **Execution:** Run `pytest` to verify that your new logic doesn't break existing levels.
+
+## 🧪 Quality Standards
+* **Type Safety:** Always use the defined `Enums` (`Position`, `Orientation`) instead of raw strings.
+* **Non-Breaking Changes:** All previous levels must still be solvable after your changes.
+* **Clarity:** Keep the `display_grid` output readable even when adding new seat types.
