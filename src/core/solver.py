@@ -3,9 +3,10 @@ from src.entities import Seat, Passenger, Position, Orientation
 from src.core.rules import get_manhattan_distance, is_neighbor, is_within_nuisance_range
 
 class SeatingSolver:
-    def __init__(self, seats: list[Seat], passengers: list[Passenger]):
+    def __init__(self, seats: list[Seat], passengers: list[Passenger], name: str = "Puzzle"):
         self.seats = seats
         self.passengers = passengers
+        self.name = name
         self.model = cp_model.CpModel()
         self.solver = cp_model.CpSolver()
         
@@ -34,7 +35,7 @@ class SeatingSolver:
             grid[s.y][s.x] = f"P{p.id:<2}"
             
         # Print final result
-        print(f"\n{'='*10} 🧩 {layout_name.upper()} PLAN {'='*10}")
+        print(f"\n{'='*10} {layout_name.upper()} PLAN {'='*10}")
         
         x_header = "      " + "".join(f" {x: <2}" for x in range(max_x + 1))
         print(x_header)
@@ -62,6 +63,33 @@ class SeatingSolver:
         quiet = (p1.needs_quiet and (p2.talkative or p2.plays_music)) or \
                 (p2.needs_quiet and (p1.talkative or p1.plays_music))
         return bad_smell or cologne or talk or music or quiet
+
+    def _enforce_proximity_requirement(self, p1, filter_func):
+        """Generic method to force p1 to be near at least one passenger matching filter_func."""
+        for s1 in self.seats:
+            potential_neighbors = []
+            for p2 in self.passengers:
+                if p1.id != p2.id and filter_func(p2):
+                    # Getting the neighbors seats
+                    potential_neighbors.extend([
+                        self.assignments[(p2.id, s2.id)] 
+                        for s2 in self.seats if is_neighbor(s1, s2)
+                    ])
+        
+        # Apply the inclusion constraint
+        self._add_inclusion_constraint(p1, s1, potential_neighbors)
+
+    def _enforce_seat_requirement(self, p, seat_filter_func, attr_name):
+        """Forces passenger p to be on a seat matching seat_filter_func."""
+        valid_vars = [
+            self.assignments[(p.id, s.id)] 
+            for s in self.seats if seat_filter_func(s)
+        ]
+        
+        if valid_vars:
+            self.model.Add(sum(valid_vars) == 1)
+        else:
+            print(f"Warning: No seat found with {attr_name} for {p.name}")
     
     def solve(self):
 
@@ -75,32 +103,15 @@ class SeatingSolver:
 
         # SOCIAL CONSTRAINTS
         for p1 in self.passengers:
-            # Condition Inclusion: Talkative
+
             if p1.talkative:
-                for s1 in self.seats:
-                    potential_talking_neighbors = []
-                    for p2 in self.passengers:
-                        if p2.talkative and p1.id != p2.id:
-                            # Utilisation de is_neighbor
-                            potential_talking_neighbors.extend([
-                                self.assignments[(p2.id, s2.id)] 
-                                for s2 in self.seats if is_neighbor(s1, s2)
-                            ])
-                    self._add_inclusion_constraint(p1, s1, potential_talking_neighbors)
+                self._enforce_proximity_requirement(p1, lambda p: p.talkative)
 
-            # Condition Inclusion: Nanny
+            # Rule: Nannies/Parents need to be near at least one child
             if p1.wants_to_be_near_child:
-                for s1 in self.seats:
-                    potential_kids_nearby = []
-                    for p2 in self.passengers:
-                        if p2.is_child and p2.id != p1.id:
-                            potential_kids_nearby.extend([
-                                self.assignments[(p2.id, s2.id)] 
-                                for s2 in self.seats if is_neighbor(s1, s2)
-                            ])
-                    self._add_inclusion_constraint(p1, s1, potential_kids_nearby)
+                self._enforce_proximity_requirement(p1, lambda p: p.is_child)
 
-            # Boucle d'exclusion P1 vs P2
+            # Exclusion loop P1 vs P2
             for p2 in self.passengers:
                 if p1.id >= p2.id: continue 
 
@@ -131,46 +142,33 @@ class SeatingSolver:
                         
         for p in self.passengers:
             if p.prefers_window:
-                # On force le passager sur l'un des sièges WINDOW
-                window_vars = [self.assignments[(p.id, s.id)] for s in self.seats if s.position.value == "WINDOW"]
-                if window_vars:
-                    self.model.Add(sum(window_vars) == 1)
-                else:
-                    print(f"⚠️ Erreur Niveau : {p.name} veut une fenêtre mais il n'y en a pas !")
+                self._enforce_seat_requirement(p, lambda s: s.position == Position.WINDOW, "Window")
 
             if p.prefers_forward:
-                # On force le passager sur l'un des sièges FORWARD
-                forward_vars = [self.assignments[(p.id, s.id)] for s in self.seats if s.orientation == Orientation.FORWARD]
-                if forward_vars:
-                    self.model.Add(sum(forward_vars) == 1)
+                self._enforce_seat_requirement(p, lambda s: s.orientation == Orientation.FORWARD, "Forward")
         
-
-
         status = self.solver.Solve(self.model)
         
         if status == cp_model.OPTIMAL or status == cp_model.FEASIBLE:
-            print(f"\nSolution found! (Status: {self.solver.StatusName(status)})")
+            print(f"\nSolution found! ({self.solver.StatusName(status)})")
             
-            # On stocke les résultats sous forme d'objets pour la visualisation
             assigned_data = []
-            final_output = []
+            # On crée un dictionnaire : {id_passager: id_siège}
+            solution_map = {} 
 
             for p in self.passengers:
                 for s in self.seats:
                     if self.solver.Value(self.assignments[(p.id, s.id)]):
-                        log_msg = f"[ASSIGNED] {p.name:<12} -> Seat {s.id:<5} (x={s.x}, y={s.y})"
+                        # Garde tes logs pour la console
+                        print(f"[ASSIGNED] {p.name:<12} -> Seat {s.id}")
                         
-                        # Log des raisons spécifiques (debug)
-                        if p.smells_bad: log_msg += " [!] Smelly"
-                        if p.smells_cologne: log_msg += " [!] Cologne"
-                        if p.is_child: log_msg += " [c] Child"
-                        
-                        print(log_msg)
                         assigned_data.append((p, s))
-                        final_output.append(f"Passenger {p.name} -> Seat {s.id}")
+                        solution_map[p.id] = s.id
 
-            self.display_grid(assigned_data)
-            return final_output
+            self.display_grid(assigned_data, layout_name=self.name)
+            
+            # On retourne le dictionnaire pour que les tests puissent l'utiliser
+            return solution_map 
         else:
             print("No solution found.")
-            return "No solution found."
+            return None

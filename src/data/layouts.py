@@ -1,6 +1,6 @@
 from src.entities import Seat, Position, Orientation
 
-LIMOUSINE_LAYOUT = [
+TAXI_LAYOUT = [
     # BACKSEATS OF THE TAXI
     Seat(id="Rank-1-1", x=0, y=1, position=Position.WINDOW, orientation=Orientation.FORWARD),
     Seat(id="Rank-2-1", x=0, y=2, position=Position.MIDDLE, orientation=Orientation.FORWARD),

@@ -10,6 +10,40 @@ In "Is This Seat Taken?", the challenge is to seat a diverse group of passengers
 
 This solver uses **Google OR-Tools (CP-SAT)** to navigate millions of possible seating combinations in milliseconds to find the one unique configuration that satisfies every single non-negotiable requirement.
 
+## 🧠 Understanding Constraint Satisfaction Problems (CSP)
+
+At its core, this engine treats seating challenges as a **Constraint Satisfaction Problem (CSP)**. Instead of using imperative logic (telling the computer *how* to find a seat step-by-step), we use **declarative logic** (defining *what* the valid final state looks like).
+
+A CSP is defined by three mathematical components:
+
+1. **Variables ($V$):** The entities that need to be assigned. In this engine, each **Passenger** is a variable that needs to be "solved" by finding the correct seat coordinate.
+2. **Domains ($D$):** The set of all possible values for each variable. For a passenger, the domain is the **list of available seats** $(x, y)$ within the grid.
+3. **Constraints ($C$):** The rules that limit which values variables can take.
+    * **Unary Constraints:** Rules affecting a single variable (e.g., *"Passenger A must be in a Window seat"*).
+    * **Binary Constraints:** Rules affecting pairs (e.g., *"Passenger A cannot be within a Manhattan distance of 2 from Passenger B"*).
+    * **Global Constraints:** System-wide rules (e.g., *"All assigned seats must be unique"*).
+
+
+
+---
+
+## ⚙️ How the Engine Works
+
+The **Google OR-Tools CP-SAT** solver avoids "Brute Force" by combining two powerful techniques:
+
+### Constraint Propagation
+As soon as a choice is made, the solver "prunes" the domains of all other variables. If Passenger A is assigned to Seat 1, Seat 1 is immediately removed from the domains of all other passengers. This creates a "ripple effect" that eliminates millions of impossible configurations instantly.
+
+### Backtracking Search
+The solver builds a **Decision Tree**. It makes an assignment, propagates the consequences, and moves to the next variable. If it hits a **contradiction** (where a variable has no possible values left in its domain), it **backtracks** to the last valid state and tries a different branch.
+
+
+
+### Spatial Abstraction
+This mathematical approach makes the engine **environment-agnostic**. It doesn't perceive a "Bus" or a "Cinema"; it only sees a coordinate system where physical walls, aisles, or social bubbles are simply mathematical boundaries translated into the Manhattan Distance formula:
+$$d(A, B) = |x_1 - x_2| + |y_1 - y_2|$$
+
+
 ## 🛋️ Supported Layouts
 
 The game features various environments. While the engine is universal, we are currently implementing the following layouts:
