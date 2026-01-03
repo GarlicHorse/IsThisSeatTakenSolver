@@ -1,5 +1,7 @@
 # 🧩 Is This Seat Taken? Solver
 
+![Tests](https://github.com/GarlicHorse/IsThisSeatTakenSolver/actions/workflows/tests.yml/badge.svg)
+
 ![Project Banner](assets/banner.avif)
 
 A high-performance logic puzzle engine designed to solve levels from the game **"Is This Seat Taken?"**. This project transforms complex human social behaviors and seating preferences into a **Constraint Satisfaction Problem (CSP)** using mathematical optimization.
