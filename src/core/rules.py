@@ -1,5 +1,6 @@
 from src.entities import Seat
 
+
 def get_manhattan_distance(s1: Seat, s2: Seat) -> int:
     """Calculates the Manhattan distance between two seats."""
     return abs(s1.x - s2.x) + abs(s1.y - s2.y)

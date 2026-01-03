@@ -1,7 +1,6 @@
-from src.entities import Passenger, Seat, Position, Orientation
 from src.core.solver import SeatingSolver
-from src.data.layouts import LIMOUSINE_LAYOUT
-from src.data.levels import *
+from src.data import LIMOUSINE_LAYOUT, get_london_level_1_1
+
 
 def play_level(city, level_num, layout, passengers):
     print(f"\n--- 🌍 {city.upper()} : LEVEL {level_num} ---")

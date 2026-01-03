@@ -1,1 +1,1 @@
-from .core.solver import SeatingSolver
+from .core.solver import SeatingSolver as SeatingSolver
