@@ -1,6 +1,6 @@
 # 🧩 Is This Seat Taken? Solver
 
-![Tests](https://github.com/GarlicHorse/IsThisSeatTakenSolver/actions/workflows/tests.yml/badge.svg)
+[![Python Tests](https://github.com/GarlicHorse/IsThisSeatTakenSolver/actions/workflows/test.yml/badge.svg?branch=main)](https://github.com/GarlicHorse/IsThisSeatTakenSolver/actions/workflows/test.yml)
 
 ![Project Banner](assets/banner.avif)
 
