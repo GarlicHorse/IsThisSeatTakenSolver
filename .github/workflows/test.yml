@@ -29,3 +29,12 @@ jobs:
     - name: Run tests with pytest and coverage
       run: |
         pytest --cov=src tests/
+
+    - name: Run tests with pytest and coverage
+      run: |
+        pytest --cov=src --cov-report=xml tests/
+
+    - name: Upload coverage reports to Codecov
+      uses: codecov/codecov-action@v4
+      with:
+        token: ${{ secrets.CODECOV_TOKEN }}
